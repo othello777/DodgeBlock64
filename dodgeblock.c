@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <libdragon.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 /* hardware definitions */
 // Pad buttons
@@ -84,7 +86,7 @@ void drawText(display_context_t dc, char *msg, int x, int y)
 void printText(display_context_t dc, char *msg, int x, int y)
 {
     if (dc)
-        graphics_draw_text(dc, x*8, y*8, msg);
+        graphics_draw_text(dc, x*16, y*16, msg);
 }
 
 /* vblank callback */
@@ -95,7 +97,7 @@ void vblCallback(void)
 
 void delay(int cnt)
 {
-    int then = gTicks + cnt;
+    int then = gTicks + cnt + 1;
     while (then > gTicks) ;
 }
 
@@ -103,7 +105,7 @@ void delay(int cnt)
 void init_n64(void)
 {
     /* Initialize peripherals */
-    display_init( RESOLUTION_320x240, DEPTH_32_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE );
+    display_init( RESOLUTION_320x240, DEPTH_32_BPP, 2, GAMMA_NONE, ANTIALIAS_OFF );
 
     register_VI_handler(vblCallback);
 
@@ -112,12 +114,17 @@ void init_n64(void)
 
 static display_context_t _dc;
 
-//#define NULL 0
-//typedef enum { false, true } ;
+#ifndef NULL
+	#define NULL 0
+#endif
+/*#ifndef bool
+	typedef enum { false, true } bool;
+#endif*/
+//#define bool _Bool;
 
-//____________________________________________
+//_____________________________________________________________________________________
 // CORE START
-//____________________________________________
+//_____________________________________________________________________________________
 
 //characters
 static char Avatar;
@@ -199,23 +206,23 @@ static int vl = 6;
 //static int randseed = 0;
 
 // Fair and fast random generation (using xorshift32, with explicit seed)
-static uint32_t rand_state = 1;
+/*static uint32_t rand_state = 1;
 static uint32_t rand(void) {
 	uint32_t x = rand_state;
 	x ^= x << 13;
 	x ^= x >> 7;
 	x ^= x << 5;
 	return rand_state = x;
-}
-#define RANDN(n) ({ \
+}*/
+/*#define RANDN(n) ({ \
 	__builtin_constant_p((n)) ? \
 		(rand()%(n)) : \
 		(uint32_t)(((uint64_t)rand() * (n)) >> 32); \
-})
+})*/
 
 static int GetRand(int from, int to)
 {
-	return from + (int)RANDN(to);//(rand() / (RAND_MAX/(to - from)));
+	return from + (rand() / (RAND_MAX/(to - from)));
 }
 
 static int GetRand2(int from, int to)
@@ -252,7 +259,7 @@ static void TextBoxReplace(char *input)
 
 	while(ptr != NULL)
 	{
-		printText(_dc, ptr, 3, line + 3);
+		printText(_dc, ptr, 0, line + 3);
 		//lcd_puts(0, line, ptr);
 		ptr = strtok_r(NULL, delim, &save);
 		line = line + 1;
@@ -319,7 +326,18 @@ static void GameInitialized(void)
 {
 
 }
-
+typedef enum {
+		Black,
+		White,
+		Green,
+		Yellow,
+		Magenta,
+		Red,
+		Blue,
+		Cyan,
+		DarkMagenta,
+		DarkGreen,
+		DarkGray} ConsoleColor;
 //static void BlueBackground(bool toggle){}
 
 static void DoSleep(int ms)
@@ -331,16 +349,16 @@ static bool IsKeyDown(int key)
 {
 	unsigned short button = getButtons(0);
 	//button = button_status();
-		if(DU_BUTTON(button) && key == 0)
+		if((DU_BUTTON(button) || CU_BUTTON(button)) && key == 0)
 			return true;
 
-		if(DD_BUTTON(button) && key == 1)
+		if((DD_BUTTON(button) || CD_BUTTON(button)) && key == 1)
 			return true;
 
-		if(DL_BUTTON(button) && key == 2)
+		if((DL_BUTTON(button) || CL_BUTTON(button)) && key == 2)
 			return true;
 
-		if(DR_BUTTON(button) && key == 3)
+		if((DR_BUTTON(button) || CR_BUTTON(button)) && key == 3)
 			return true;
 
 	return false;
@@ -401,7 +419,8 @@ static void Initialize(void)
 	Position2 = 7;
 	OldPosition = 6;
 	OldPosition2 = 7;
-	rand_state = (int)gTicks;
+	srand(gTicks);
+	//rand_state = (int)gTicks;
 	//rand_state = GetRand(1, 60);
 	//BackBoard = new char[16, 16];
 	//write.DestinationFile = settingslocation;
@@ -612,12 +631,6 @@ static void Initialize(void)
 	}
 }*/
 
-static void InitConsoleColors(void)
-{
-	//StringBuilderSetBackgroundColor = ConsoleColor.Black;
-	//StringBuilderSetColor = ConsoleColor.White;
-}
-
 static void TestKeydowns(void)
 {
 	//NativeKeyboard.Update();
@@ -683,57 +696,57 @@ static void PositionPlayers(void)
 	}
 }
 
-/*static ConsoleColor StringBuilderSetColor
+static void StringBuilderSetColor(int color)
 {
-	set
+	switch (color)
 	{
-
-		switch (value)
-		{
-			case ConsoleColor.Black:
-				 strcat(Stringbuilder,"\cf0");
-				break;
-			case ConsoleColor.White:
-				 strcat(Stringbuilder,"\cf1");
-				break;
-			case ConsoleColor.Green:
-				 strcat(Stringbuilder,"\cf2");
-				break;
-			case ConsoleColor.Yellow:
-				 strcat(Stringbuilder,"\cf3");
-				break;
-			case ConsoleColor.Magenta:
-				 strcat(Stringbuilder,"\cf4");
-				break;
-			case ConsoleColor.Red:
-				 strcat(Stringbuilder,"\cf5");
-				break;
-			case ConsoleColor.Blue:
-				 strcat(Stringbuilder,"\cf6");
-				break;
-			case ConsoleColor.Cyan:
-				 strcat(Stringbuilder,"\cf7");
-				break;
-			case ConsoleColor.DarkMagenta:
-				 strcat(Stringbuilder,"\cf8");
-				break;
-			case ConsoleColor.DarkGreen:
-				 strcat(Stringbuilder,"\cf9");
-				break;
-			case ConsoleColor.DarkGray:
-				 strcat(Stringbuilder,"\cf10");
-				break;
-			default:
-				 strcat(Stringbuilder,"\cf1");
-				break;
-
-		}
-
+		case Black:
+			 strcat(Stringbuilder,"\\cf0");
+			break;
+		case White:
+			 strcat(Stringbuilder,"\\cf1");
+			break;
+		case Green:
+			 strcat(Stringbuilder,"\\cf2");
+			break;
+		case Yellow:
+			 strcat(Stringbuilder,"\\cf3");
+			break;
+		case Magenta:
+			 strcat(Stringbuilder,"\\cf4");
+			break;
+		case Red:
+			 strcat(Stringbuilder,"\\cf5");
+			break;
+		case Blue:
+			 strcat(Stringbuilder,"\\cf6");
+			break;
+		case Cyan:
+			 strcat(Stringbuilder,"\\cf7");
+			break;
+		case DarkMagenta:
+			 strcat(Stringbuilder,"\\cf8");
+			break;
+		case DarkGreen:
+			 strcat(Stringbuilder,"\\cf9");
+			break;
+		/*case DarkGray:
+			 strcat(Stringbuilder,"\\cf10");
+			break;*/
+		default:
+			 strcat(Stringbuilder,"\\cf1");
+			break;
 
 	}
 }
 
-static ConsoleColor StringBuilderSetBackgroundColor
+static void InitConsoleColors(void)
+{
+	//StringBuilderSetBackgroundColor = ConsoleColor.Black;
+	StringBuilderSetColor(White);
+}
+
+/*static ConsoleColor StringBuilderSetBackgroundColor
 {
 	set
 	{
@@ -779,7 +792,7 @@ static void InitStringBuilder(void)
 	//prepare Stringbuilder
 	strcpy(Stringbuilder, "");
 	//Stringbuilder +=  ("" + BoardSize);
-	//StringBuilderSetColor = color;
+	StringBuilderSetColor(White);
 	//if (Mode == 4 && customModeC.CustomModeAble)
 	//	 strcat(Stringbuilder,"        Score:" + Score +  @" \n\n "
 	//	   + "                     " + Math.Round(BenchFPS.DoGetFps(), 5) + "FPS");
@@ -858,7 +871,7 @@ static void WriteToScreen(void)
 (ScoreFlashTimer <= TimerCounter && ScoreFlashTimer > TimerCounter - 10 && ColorMode == true && TimerCounter > 20) ||
 			CheckPointFlasher())
 		{
-			//StringBuilderSetColor = ConsoleColor.Yellow;
+			StringBuilderSetColor(Yellow);
 
 			/*if (ScoreFlashTimer <= TimerCounter && ScoreFlashTimer > TimerCounter - 10 && ColorMode == true && TimerCounter > 20)
 				StringBuilderSetColor = ConsoleColor.Magenta;
@@ -876,7 +889,7 @@ static void WriteToScreen(void)
 		{
 			//StringBuilderSetBackgroundColor = UseBoard[j, i].BackColor;
 
-			//StringBuilderSetColor = UseBoard[j, i].Color;
+			//StringBuilderSetColor(UseBoard[j, i].Color);
 			//snprintf(Stringbuilder, 200, "%s", Stringbuilder);//, UseBoard[j][i]);
 			char ape[2];// = {((char)UseBoard[j][i])};
 			snprintf(ape, 2, "%c", (char)UseBoard[j][i]);
@@ -1006,7 +1019,7 @@ static void DeathScreen(int Place)
 	{
 		 strcpy(Stringbuilder, "");
 		 //strcat(Stringbuilder, BoardSize);
-		//StringBuilderSetColor = ConsoleColor.Red;
+		StringBuilderSetColor(Red);
 		 strcat(Stringbuilder,"\n\n\n ");
 	}
 	if (ColorMode)
@@ -1940,7 +1953,8 @@ void Game(void)
 
 	//InternetConnect();
 
-	TextBoxWriteLine("Start Screen");
+	TextBoxWriteLine("Start Game");
+	delay(10);
 	//StartScreen();
 
 	//if (MuteMusic)
@@ -2013,20 +2027,26 @@ int main(void)
 			"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.........................O.%#\n##############################\n",
 			"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#..........................O.#\n##############################\n",
 			"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#...........................O#\n##############################\n",
-			"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @........%#\n#.......@@@@@@@@@@@@.........#\n#............................#\n##############################\n"
+			"###e##########################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @........%#\n#.......@@@@@@@@@@@@.........#\n#............................#\n##############################\n"
        };
-
-
 	int anim = 0;
-	unsigned short buttons;//, previous = 0;
-
     init_n64();
+    rdp_init();
+    dfs_init( DFS_DEFAULT_LOCATION );
+    /* Read in the custom font */
+	int fp = dfs_open("/libdragon-font.sprite");
+	sprite_t *custom_font = malloc( dfs_size( fp ) );
+	dfs_read( custom_font, 1, dfs_size( fp ), fp );
+	dfs_close( fp );
 
     while (1)
     {
 		unsigned int color;
 
         _dc = lockVideo(1);
+
+        graphics_set_font_sprite( custom_font );
+
         color = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
 		graphics_fill_screen(_dc, color);
 
@@ -2042,7 +2062,7 @@ int main(void)
 
 		printText(_dc, introanim[anim], 5, 5);
 		anim++;
-		if(anim > 31)
+		if(anim > 32)
 			anim = 0;
 
         printText(_dc, "DodgeBlock  64", 320/16 - 8, 3);
@@ -2050,19 +2070,12 @@ int main(void)
 
         unlockVideo(_dc);
 
-        buttons = getButtons(0);
+		if (IsKeyDown(0))
+		{
 
-        //if (DU_BUTTON(buttons ^ previous))
-        //{
-            // A changed
-            if (DU_BUTTON(buttons))
-			{
-            	Game();
-			}
-		//}
-        //previous = buttons;
+			Game();
+		}
         delay(9);
     }
-
     return 0;
 }
