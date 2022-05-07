@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
@@ -113,6 +112,7 @@ void init_n64(void)
 }
 
 static display_context_t _dc;
+static sprite_t *custom_font;
 
 #ifndef NULL
 	#define NULL 0
@@ -202,6 +202,22 @@ static char UseBoard[20][20];
 static char slog[7][23];
 static int initfill = 0;
 static int vl = 6;
+static bool bluebg = false;
+static int savedkey;
+
+typedef enum {
+		Black,
+		White,
+		Green,
+		Yellow,
+		Magenta,
+		Red,
+		Blue,
+		Cyan,
+		DarkMagenta,
+		DarkGreen,
+		DarkGray
+} ConsoleColor;
 
 static int GetRand(int from, int to)
 {
@@ -213,78 +229,98 @@ static int GetRand2(int from, int to)
 	return GetRand(from, to);
 }
 
+static void SetFont(int fontsz)
+{
+	if(fontsz == 1)
+		graphics_set_default_font();
+	if(fontsz == 2)
+		graphics_set_font_sprite( custom_font );
+	fontsize = fontsz;
+}
+
 static void TextBoxReplace(char *input)
 {
 	char str[strlen(input) + 1];
 	strcpy(str, input);
 	char *save;
 	char delim[] = "\n";
-
 	char *ptr = strtok_r(str, delim, &save);
-
 	int line = 0;
 
 	//lcd_clear_display();
 	unsigned int color;
 	_dc = lockVideo(1);
-	graphics_fill_screen(_dc, graphics_make_color(0x00, 0x00, 0x00, 0xFF));
-
-	void setcolor(int r, int g, int b)
-	{
-		color = graphics_make_color(r, g, b, 0xFF);
-		graphics_set_color(color, 0);
-	}
+	graphics_fill_screen(_dc, graphics_make_color(0x00, 0x00, 0xFF * bluebg, 0xFF));
 	while(ptr != NULL)
 	{
-		switch (ptr)
+		//char **result = malloc(255);
+		char *save2;
+		char delim2[] = "\\";
+		char *ptr2 = strtok_r(ptr, delim2, &save2);
+		int col = 0;
+		void setcolor(int r, int g, int b)
+			{
+				color = graphics_make_color(r, g, b, 0xFF);
+				graphics_set_color(color, 0);
+				ptr2++;
+			}
+		while(ptr2 != NULL)
 		{
-			case "\\cf0":
-				color = Black;
-				setcolor(0x00, 0x00, 0x00);
-				break;
-			case "\\cf1":
-				setcolor(0xFF, 0xFF, 0xFF);
-				break;
-			case "\\cf2":
-				color = Green;
-				setcolor(0,255,0);
-				break;
-			case "\\cf3":
-				color = Yellow;
-				setcolor(255,255,0);
-				break;
-			case "\\cf4":
-				color = Magenta;
-				setcolor(255,0,255);
-				break;
-			case "\\cf5":
-				color = Red;
-				setcolor(255,0,0);
-				break;
-			case "\\cf6":
-				color = Blue;
-				setcolor(0,0,255);
-				break;
-			case "\\cf7":
-				color = Cyan;
-				setcolor(0,255,255);
-				break;
-			case "\\cf8":
-				color = DarkMagenta;
-				setcolor(255,120,0);
-				break;
-			case "\\cf9":
-				color = DarkGreen;
-				setcolor(0,100,0);
-				break;
-			default:
-				color = White;
-				setcolor(0xFF, 0xFF, 0xFF);
-				break;
-		}
+			if(ptr2 != NULL)
+				if(ptr2[0] == 'c')
+					ptr2+=2;
+			//bool startofline = false;
+			switch (ptr2[0])
+			{
+				case '0':
+					color = Black;
+					setcolor(0x00, 0x00, 0x00);
+					break;
+				case '1':
+					setcolor(0xFF, 0xFF, 0xFF);
+					break;
+				case '2':
+					color = Green;
+					setcolor(0,255,0);
+					break;
+				case '3':
+					color = Yellow;
+					setcolor(255,255,0);
+					break;
+				case '4':
+					color = Magenta;
+					setcolor(255,0,255);
+					break;
+				case '5':
+					color = Red;
+					setcolor(255,0,0);
+					break;
+				case '6':
+					color = Blue;
+					setcolor(0,0,255);
+					break;
+				case '7':
+					color = Cyan;
+					setcolor(0,255,255);
+					break;
+				case '8':
+					color = DarkMagenta;
+					setcolor(255,120,0);
+					break;
+				case '9':
+					color = DarkGreen;
+					setcolor(0,100,0);
+					break;
+				default:
+					//startofline = true;
+					break;
+			}
+			printText(_dc, ptr2, col, line + 1);
+			col += strlen(ptr2);
+			ptr2 = strtok_r(NULL, delim2, &save2);
+			//ptr2 = strstr(ptr2, delim2);// tokenize(NULL, save2, ptr, delim2);
 
-		printText(_dc, ptr, 0, line);
-		//lcd_puts(0, line, ptr);
+		}
 		ptr = strtok_r(NULL, delim, &save);
 		line = line + 1;
 	}
@@ -350,19 +386,10 @@ static void GameInitialized(void)
 {
 
 }
-typedef enum {
-		Black,
-		White,
-		Green,
-		Yellow,
-		Magenta,
-		Red,
-		Blue,
-		Cyan,
-		DarkMagenta,
-		DarkGreen,
-		DarkGray} ConsoleColor;
-//static void BlueBackground(bool toggle){}
+static void BlueBackground(bool toggle)
+{
+	bluebg = toggle;
+}
 
 static void DoSleep(int ms)
 {
@@ -372,19 +399,35 @@ static void DoSleep(int ms)
 static bool IsKeyDown(int key)
 {
 	unsigned short button = getButtons(0);
-	//button = button_status();
-		if((DU_BUTTON(button) || CU_BUTTON(button)) && key == 0)
-			return true;
+	bool pressed = false;
 
-		if((DD_BUTTON(button) || CD_BUTTON(button)) && key == 1)
-			return true;
+	if((DU_BUTTON(button) || CU_BUTTON(button)) && key == 0)
+		pressed = true;
+	if((DD_BUTTON(button) || CD_BUTTON(button)) && key == 1)
+		pressed = true;
+	if((DL_BUTTON(button) || CL_BUTTON(button)) && key == 2)
+		pressed = true;
+	if((DR_BUTTON(button) || CR_BUTTON(button)) && key == 3)
+		pressed = true;
 
-		if((DL_BUTTON(button) || CL_BUTTON(button)) && key == 2)
+	if(pressed)
+	{
+		if(key == savedkey )//|| savedkey == -1)
+		{
+			/*if(key == -1)
+				savedkey = -2;
+			else*/
+				savedkey = -1;
+			return false;
+		}
+		else
+		{
+			if(UseNewControls)
+				savedkey = key;
 			return true;
-
-		if((DR_BUTTON(button) || CR_BUTTON(button)) && key == 3)
-			return true;
-
+		}
+	}
+	//savedkey = -2;
 	return false;
 }
 
@@ -410,7 +453,7 @@ static void Initialize(void)
 	timer100 = 0;
 	timer300 = 0;
 	snowflaketimer = 0;
-	HighScore = 1530;
+	HighScore = 153;
 	//WriteBoard = "";
 	//settingslocation = "Settings.txt";
 	if (GetRand2(0, 10) % 2 == 1)
@@ -444,8 +487,6 @@ static void Initialize(void)
 	OldPosition = 6;
 	OldPosition2 = 7;
 	srand(gTicks);
-	//rand_state = (int)gTicks;
-	//rand_state = GetRand(1, 60);
 	//BackBoard = new char[16, 16];
 	//write.DestinationFile = settingslocation;
 
@@ -655,71 +696,6 @@ static void Initialize(void)
 	}
 }*/
 
-static void TestKeydowns(void)
-{
-	//NativeKeyboard.Update();
-
-	//Test Keydowns
-	if (IsKeyDown(2))
-	{
-		OldPosition = Position;
-		Position = Position - 1;
-		if (Position < 0)
-			Position = 0;
-	}
-	if (IsKeyDown(3))
-	{
-		OldPosition = Position;
-		Position = Position + 1;
-		if (Position > GameWidth - 1)
-			Position = GameWidth - 1;
-	}
-	if (IsKeyDown(0))
-	{
-		/*if (!shotc.IsAlive && Ammo > 0 && shotc.ShootCooldown == 0)
-		{
-			Ammo -= 1;
-
-			shotc.Y = 0;
-			shotc.X = Position;
-			shotc.IsAlive = true;
-
-			shotc.ShootCooldown = 4;
-		}*/
-	}
-
-	if (IsKeyDown(1))
-	{
-		if (Quitting == false)
-		{
-			//NewSettingsMenu.SettingsMenu();
-		}
-
-	}
-}
-
-static void PositionPlayers(void)
-{
-	//Position
-	UseBoard[Position][0] = 'O';
-	if (OldPosition != Position && UseBoard[OldPosition][0] == 'O')
-		UseBoard[OldPosition][0] = '.';
-
-	//Design Shield (Shell)
-	if (Shields > 0)
-	{
-		if (UseBoard[Position][1] == '.' || UseBoard[Position][1] == '%' || UseBoard[Position][1] == '-')
-		{
-
-			UseBoard[Position][1] = '-';
-
-		}
-
-		if (OldPosition != Position && UseBoard[OldPosition][1] == '-')
-			UseBoard[OldPosition][1] = '.';
-	}
-}
-
 static void StringBuilderSetColor(int color)
 {
 	switch (color)
@@ -768,6 +744,142 @@ static void InitConsoleColors(void)
 {
 	//StringBuilderSetBackgroundColor = ConsoleColor.Black;
 	StringBuilderSetColor(White);
+}
+
+//also ye old code
+static void SettingsMenu()
+{
+	SetFont(1);
+	//music.PauseMusic();
+
+	BlueBackground(true);
+	StringBuilderSetColor(White);
+
+	TextBoxReplace("  \n     ###########Settings###########\n     "
+							"#                            #\n     "
+							"#    Right = Mute/Unmute     #\n     "
+							"#    Left = Control Type     #\n     "
+							"#    Up = Return to Game     #\n     "
+							"#                            #\n     "
+							"##############################\n     ");
+	int ButtonCooldown = 0;
+	bool NotReturned = true;
+
+	while (NotReturned)
+	{
+		if (IsKeyDown(2))
+		{
+			if (UseNewControls == true && ButtonCooldown == 0)
+			{
+				TextBoxWriteLine("Old Control Style");
+				UseNewControls = false;
+				ButtonCooldown = 5;
+			}
+			else if (UseNewControls == false && ButtonCooldown == 0)
+			{
+				TextBoxWriteLine("New Control Style");
+				UseNewControls = true;
+				ButtonCooldown = 5;
+			}
+		}
+
+		if (IsKeyDown(3))
+		{
+			if (MuteMusic == true && ButtonCooldown == 0)
+			{
+				TextBoxWriteLine("Unmuted");
+				MuteMusic = false;
+				ButtonCooldown = 5;
+			}
+			else if (MuteMusic == false && ButtonCooldown == 0)
+			{
+				TextBoxWriteLine("Muted");
+				MuteMusic = true;
+				ButtonCooldown = 5;
+			}
+		}
+
+		if (IsKeyDown(0))
+		{
+			NotReturned = false;
+			InitConsoleColors();
+		}
+
+		if (ButtonCooldown > 0)
+			ButtonCooldown = ButtonCooldown - 1;
+
+		DoSleep(60);
+	}
+	//if (MuteMusic == false)
+	//	music.ResumeMusic();
+	BlueBackground(false);
+	SetFont(2);
+
+}
+
+static void TestKeydowns(void)
+{
+	//NativeKeyboard.Update();
+
+	//Test Keydowns
+	if (IsKeyDown(2))
+	{
+		OldPosition = Position;
+		Position = Position - 1;
+		if (Position < 0)
+			Position = 0;
+	}
+	if (IsKeyDown(3))
+	{
+		OldPosition = Position;
+		Position = Position + 1;
+		if (Position > GameWidth - 1)
+			Position = GameWidth - 1;
+	}
+	if (IsKeyDown(0))
+	{
+		/*if (!shotc.IsAlive && Ammo > 0 && shotc.ShootCooldown == 0)
+		{
+			Ammo -= 1;
+
+			shotc.Y = 0;
+			shotc.X = Position;
+			shotc.IsAlive = true;
+
+			shotc.ShootCooldown = 4;
+		}*/
+	}
+
+	if (IsKeyDown(1))
+	{
+		if (Quitting == false)
+		{
+			SettingsMenu();
+		}
+
+	}
+}
+
+static void PositionPlayers(void)
+{
+	//Position
+	UseBoard[Position][0] = 'O';
+	if (OldPosition != Position && UseBoard[OldPosition][0] == 'O')
+		UseBoard[OldPosition][0] = '.';
+
+	//Design Shield (Shell)
+	if (Shields > 0)
+	{
+		if (UseBoard[Position][1] == '.' || UseBoard[Position][1] == '%' || UseBoard[Position][1] == '-')
+		{
+
+			UseBoard[Position][1] = '-';
+
+		}
+
+		if (OldPosition != Position && UseBoard[OldPosition][1] == '-')
+			UseBoard[OldPosition][1] = '.';
+	}
 }
 
 /*static ConsoleColor StringBuilderSetBackgroundColor
@@ -822,11 +934,11 @@ static void InitStringBuilder(void)
 	//	   + "                     " + Math.Round(BenchFPS.DoGetFps(), 5) + "FPS");
 	//else
 	char smolbuf1[20];
-	snprintf(smolbuf1, 20, "        Score: %d", Score);
+	snprintf(smolbuf1, 20, "       Score: %d", Score);
 	//strcat(Stringbuilder, smolbuf1);
 
 	char smolbuf2[40];
-	snprintf(smolbuf2, 40, "%s\n   High Score: %d\n", smolbuf1, HighScore);
+	snprintf(smolbuf2, 40, "%s\n  High Score: %d\n", smolbuf1, HighScore);
 	strcat(Stringbuilder, smolbuf2);
 	//+ "                     " + Math.Round(BenchFPS.DoGetFps(), 5) + "FPS");
 }
@@ -850,9 +962,9 @@ static void BoardAppend(void)
 	if (Mode == 1 /*|| Mode == 4 && !customModeC.CustomModeAble*/)
 	{
 		char smolbuf1[20];
-		snprintf(smolbuf1, 20, "\n\n Ammo = %d", Ammo);
+		snprintf(smolbuf1, 20, "\n\n  Ammo=%d", Ammo);
 		char smolbuf2[40];
-		snprintf(smolbuf2, 40, "%s Shields = %d\n", smolbuf1, Shields);
+		snprintf(smolbuf2, 40, "%s Shields=%d\n", smolbuf1, Shields);
 		strcat(Stringbuilder, smolbuf2);
 
 		InitConsoleColors();
@@ -865,6 +977,25 @@ static bool CheckPointFlasher(void)
 		if ((Score >= 1000 && Score <= 1010) || (Score >= 500 && Score <= 510))
 			return true;
 	return false;
+}
+
+static void SetCharacterColor(char character)
+{
+	switch(character)
+	{
+	case 'O':
+			StringBuilderSetColor(Cyan);
+		break;
+	case '.':
+			StringBuilderSetColor(Blue);
+			break;
+	case '$':
+			StringBuilderSetColor(Magenta);
+			break;
+	case '%':
+			StringBuilderSetColor(White);
+			break;
+	}
 }
 
 static void WriteToScreen(void)
@@ -891,17 +1022,17 @@ static void WriteToScreen(void)
 
 	for (int i = GameHeight - 1; i >= 0; i--)
 	{
-		if (/*(Score == HighScore && !(Mode == 4 && customModeC.CustomModeAble) && Flasher()) ||*/
-(ScoreFlashTimer <= TimerCounter && ScoreFlashTimer > TimerCounter - 10 && ColorMode == true && TimerCounter > 20) ||
+		if ((Score == HighScore && !(Mode == 4/* && customModeC.CustomModeAble*/) && Flasher()) ||
+			(ScoreFlashTimer <= TimerCounter && ScoreFlashTimer > TimerCounter - 10 && TimerCounter > 20) ||
 			CheckPointFlasher())
 		{
 			StringBuilderSetColor(Yellow);
 
-			/*if (ScoreFlashTimer <= TimerCounter && ScoreFlashTimer > TimerCounter - 10 && ColorMode == true && TimerCounter > 20)
-				StringBuilderSetColor = ConsoleColor.Magenta;
+			if (ScoreFlashTimer <= TimerCounter && ScoreFlashTimer > TimerCounter - 10 && ColorMode == true && TimerCounter > 20)
+				StringBuilderSetColor(Magenta);
 
 			if(CheckPointFlasher())
-				StringBuilderSetColor = ConsoleColor.Cyan;*/
+				StringBuilderSetColor(Cyan);
 			 strcat(Stringbuilder,"\n  | ");
 			InitConsoleColors();
 		}
@@ -914,6 +1045,7 @@ static void WriteToScreen(void)
 			//StringBuilderSetBackgroundColor = UseBoard[j, i].BackColor;
 
 			//StringBuilderSetColor(UseBoard[j, i].Color);
+			SetCharacterColor((char)UseBoard[j][i]);
 			//snprintf(Stringbuilder, 200, "%s", Stringbuilder);//, UseBoard[j][i]);
 			char ape[2];// = {((char)UseBoard[j][i])};
 			snprintf(ape, 2, "%c", (char)UseBoard[j][i]);
@@ -927,16 +1059,16 @@ static void WriteToScreen(void)
 			(ScoreFlashTimer <= TimerCounter && ScoreFlashTimer > TimerCounter - 10 && TimerCounter > 20) ||
 			CheckPointFlasher())
 		{
-			/*StringBuilderSetColor = ConsoleColor.Yellow;
-			Console.BackgroundColor = ConsoleColor.Black;
+			StringBuilderSetColor(Yellow);
+			//Console.BackgroundColor = ConsoleColor.Black;
 
 			if (ScoreFlashTimer <= TimerCounter && ScoreFlashTimer > TimerCounter - 10 && TimerCounter > 20)
-				StringBuilderSetColor = ConsoleColor.Magenta;
+				StringBuilderSetColor(Magenta);
 
 			if (CheckPointFlasher())
-				StringBuilderSetColor = ConsoleColor.Cyan;*/
+				StringBuilderSetColor(Cyan);
 
-			 strcat(Stringbuilder,"  |");
+			 strcat(Stringbuilder," |");
 		}
 		else
 		{
@@ -1044,7 +1176,7 @@ static void DeathScreen(int Place)
 		 strcpy(Stringbuilder, "");
 		 //strcat(Stringbuilder, BoardSize);
 		StringBuilderSetColor(Red);
-		 strcat(Stringbuilder,"\n\n\n ");
+		 strcat(Stringbuilder,"\n\n\n \n\n ");
 	}
 	if (ColorMode)
 	{
@@ -1219,10 +1351,10 @@ static void OnDeath(int j)
 			 strcat(Stringbuilder,"" + BoardSize + " ");
 		}
 		else
-		{
-			StringBuilderSetColor = ConsoleColor.Cyan;
-			 strcat(Stringbuilder,"" + BoardSize + " ");
-		}*/
+		{*/
+			StringBuilderSetColor(Cyan);
+			 //strcat(Stringbuilder,"" + BoardSize + " ");
+		//}
 	}
 	// add endline
 	void LineBreak(void)
@@ -1257,7 +1389,7 @@ static void OnDeath(int j)
 	{*/
 		DeathScreen(Position);
 		OnPostDeathScreen();
-		strcat(Stringbuilder,"You Died!");
+		strcat(Stringbuilder,"\n  You Died!");
 	//}
 	LineBreak();
 
@@ -1265,12 +1397,13 @@ static void OnDeath(int j)
 
 	// add the results
 	char smolbuf1[20];
-	snprintf(smolbuf1, 20, "Your Score: %d", Score);
+	snprintf(smolbuf1, 20, "  Your Score: %d", Score);
 	strcat(Stringbuilder, smolbuf1);
 	LineBreak();
 	if (Score >= HighScore)
 	{
-		strcat(Stringbuilder,"*New High Score!*");
+		StringBuilderSetColor(Yellow);
+		strcat(Stringbuilder,"  *New High Score!*");
 		/*if (ColorMode)
 			StringBuilderSetColor = ConsoleColor.Yellow;
 
@@ -1284,21 +1417,22 @@ static void OnDeath(int j)
 		}
 		else
 		{
-			StringBuilderSetColor = ConsoleColor.Cyan;
-		}*/
+			StringBuilderSetColor = ConsoleColor.Cyan;*/
+			StringBuilderSetColor(Cyan);
+		//}
 		LineBreak();
 	}
 	else
 	{
 		char smolbuf2[20];
-		snprintf(smolbuf2, 20, "High Score: %d", HighScore);
+		snprintf(smolbuf2, 20, "  High Score: %d", HighScore);
 		strcat(Stringbuilder, smolbuf2);
 		LineBreak();
 	}
 
 
 
-	strcat(Stringbuilder,"Playing: ");
+	strcat(Stringbuilder,"  Playing: \n  ");
 	if (Mode == 0)
 	{
 		 strcat(Stringbuilder,"Classic Mode");
@@ -1343,9 +1477,9 @@ static void OnDeath(int j)
 
 	LineBreak();
 	LineBreak();
-	 strcat(Stringbuilder,"Press Up to Continue");
+	 strcat(Stringbuilder," \n  Up to Continue");
 	LineBreak();
-	 strcat(Stringbuilder,"Press Down to Quit");
+	 strcat(Stringbuilder,"  Down to Quit");
 
 	strcpy(WriteBoard, Stringbuilder);;
 	if (ColorMode)
@@ -1709,69 +1843,7 @@ static void BlockHandling(void)
 
 }   //=====/\===================/\======
 
-//also ye old code
-/*static void SettingsMenu()
-{
-	TextBoxReplace("");
-	music.PauseMusic();
 
-	Console.BackgroundColor = ConsoleColor.DarkBlue;
-	Console.ForegroundColor = ConsoleColor.White;
-
-	TextBoxWriteLine(
-"###########Settings###########\n" +
-"#                            #\n" +
-"#    Right = Mute/Unmute     #\n" +
-"#    Left =  Quit & Quit     #\n" +
-"#    Up = Return to Game     #\n" +
-"#                            #\n" +
-"##############################\n");
-	int ButtonCooldown = 0;
-	bool NotReturned = true;
-
-	while (NotReturned)
-	{
-		if (IsKeyDown(2))
-		{
-			Refresh = false;
-			NotReturned = false;
-			InitConsoleColors();
-			Console.ForegroundColor = ConsoleColor.Red;
-		}
-
-		if (IsKeyDown(3))
-		{
-			if (MuteMusic == true && ButtonCooldown == 0)
-			{
-				TextBoxWriteLine("Unmuted");
-				MuteMusic = false;
-				ButtonCooldown = 5;
-			}
-			else if (MuteMusic == false && ButtonCooldown == 0)
-			{
-				TextBoxWriteLine("Muted");
-				MuteMusic = true;
-				ButtonCooldown = 5;
-			}
-
-		}
-
-		if (IsKeyDown(0))
-		{
-			NotReturned = false;
-			InitConsoleColors();
-		}
-
-		if (ButtonCooldown > 0)
-			ButtonCooldown = ButtonCooldown - 1;
-
-		System.Threading.DoSleep(60);
-	}
-	if (MuteMusic == false)
-		music.ResumeMusic();
-	TextBoxReplace("");
-
-}*/
 
 /*static void StartScreen(void)
 {
@@ -2059,7 +2131,7 @@ int main(void)
     dfs_init( DFS_DEFAULT_LOCATION );
     /* Read in the custom font */
 	int fp = dfs_open("/libdragon-font.sprite");
-	sprite_t *custom_font = malloc( dfs_size( fp ) );
+	custom_font = malloc( dfs_size( fp ) );
 	dfs_read( custom_font, 1, dfs_size( fp ), fp );
 	dfs_close( fp );
 
@@ -2094,11 +2166,9 @@ int main(void)
 
 		if (IsKeyDown(0))
 		{
-			graphics_set_font_sprite( custom_font );
-			fontsize = 2;
+			SetFont(2);
 			Game();
-			fontsize = 1;
-			//graphics_set_font_sprite( font) );
+			SetFont(1);
 		}
         delay(9);
     }
