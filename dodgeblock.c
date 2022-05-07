@@ -37,8 +37,8 @@
 
 unsigned short gButtons = 0;
 struct controller_data gKeys;
-
-volatile int gTicks;                    /* incremented every vblank */
+int fontsize = 1;
+volatile int gTicks; // incremented every vblank
 
 /* input - do getButtons() first, then getAnalogX() and/or getAnalogY() */
 unsigned short getButtons(int pad)
@@ -86,7 +86,7 @@ void drawText(display_context_t dc, char *msg, int x, int y)
 void printText(display_context_t dc, char *msg, int x, int y)
 {
     if (dc)
-        graphics_draw_text(dc, x*16, y*16, msg);
+        graphics_draw_text(dc, x*8*fontsize, y*8*fontsize, msg);
 }
 
 /* vblank callback */
@@ -198,27 +198,10 @@ static int OldPosition;
 static int OldPosition2;
 static char BackBoard[20][20];
 static char UseBoard[20][20];
-//static int button;
 
 static char slog[7][23];
 static int initfill = 0;
 static int vl = 6;
-//static int randseed = 0;
-
-// Fair and fast random generation (using xorshift32, with explicit seed)
-/*static uint32_t rand_state = 1;
-static uint32_t rand(void) {
-	uint32_t x = rand_state;
-	x ^= x << 13;
-	x ^= x >> 7;
-	x ^= x << 5;
-	return rand_state = x;
-}*/
-/*#define RANDN(n) ({ \
-	__builtin_constant_p((n)) ? \
-		(rand()%(n)) : \
-		(uint32_t)(((uint64_t)rand() * (n)) >> 32); \
-})*/
 
 static int GetRand(int from, int to)
 {
@@ -244,22 +227,63 @@ static void TextBoxReplace(char *input)
 	//lcd_clear_display();
 	unsigned int color;
 	_dc = lockVideo(1);
-	color = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
-	graphics_fill_screen(_dc, color);
+	graphics_fill_screen(_dc, graphics_make_color(0x00, 0x00, 0x00, 0xFF));
 
-	color = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF);
-	int pad = 10;
-	graphics_draw_line(_dc, pad, pad, 320-pad, pad, color);
-	graphics_draw_line(_dc, pad, pad, pad, 240-pad, color);
-	graphics_draw_line(_dc, 320-pad, pad, 320-pad, 240-pad, color);
-	graphics_draw_line(_dc, pad, 240-pad, 320-pad, 240-pad, color);
-
-	color = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF);
-	graphics_set_color(color, 0);
-
+	void setcolor(int r, int g, int b)
+	{
+		color = graphics_make_color(r, g, b, 0xFF);
+		graphics_set_color(color, 0);
+	}
 	while(ptr != NULL)
 	{
-		printText(_dc, ptr, 0, line + 3);
+		switch (ptr)
+		{
+			case "\\cf0":
+				color = Black;
+				setcolor(0x00, 0x00, 0x00);
+				break;
+			case "\\cf1":
+				setcolor(0xFF, 0xFF, 0xFF);
+				break;
+			case "\\cf2":
+				color = Green;
+				setcolor(0,255,0);
+				break;
+			case "\\cf3":
+				color = Yellow;
+				setcolor(255,255,0);
+				break;
+			case "\\cf4":
+				color = Magenta;
+				setcolor(255,0,255);
+				break;
+			case "\\cf5":
+				color = Red;
+				setcolor(255,0,0);
+				break;
+			case "\\cf6":
+				color = Blue;
+				setcolor(0,0,255);
+				break;
+			case "\\cf7":
+				color = Cyan;
+				setcolor(0,255,255);
+				break;
+			case "\\cf8":
+				color = DarkMagenta;
+				setcolor(255,120,0);
+				break;
+			case "\\cf9":
+				color = DarkGreen;
+				setcolor(0,100,0);
+				break;
+			default:
+				color = White;
+				setcolor(0xFF, 0xFF, 0xFF);
+				break;
+		}
+
+		printText(_dc, ptr, 0, line);
 		//lcd_puts(0, line, ptr);
 		ptr = strtok_r(NULL, delim, &save);
 		line = line + 1;
@@ -2027,7 +2051,7 @@ int main(void)
 			"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.........................O.%#\n##############################\n",
 			"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#..........................O.#\n##############################\n",
 			"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#...........................O#\n##############################\n",
-			"###e##########################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @........%#\n#.......@@@@@@@@@@@@.........#\n#............................#\n##############################\n"
+			"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @........%#\n#.......@@@@@@@@@@@@.........#\n#............................#\n##############################\n"
        };
 	int anim = 0;
     init_n64();
@@ -2044,8 +2068,6 @@ int main(void)
 		unsigned int color;
 
         _dc = lockVideo(1);
-
-        graphics_set_font_sprite( custom_font );
 
         color = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
 		graphics_fill_screen(_dc, color);
@@ -2072,8 +2094,11 @@ int main(void)
 
 		if (IsKeyDown(0))
 		{
-
+			graphics_set_font_sprite( custom_font );
+			fontsize = 2;
 			Game();
+			fontsize = 1;
+			//graphics_set_font_sprite( font) );
 		}
         delay(9);
     }

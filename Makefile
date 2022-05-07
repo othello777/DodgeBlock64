@@ -1,4 +1,4 @@
-N64_INST = ../../../..//n64/toolchain
+N64_INST = ../../../../n64/toolchain
 all: dodgeblock.z64
 .PHONY: all
 
@@ -13,7 +13,7 @@ dodgeblock.z64: N64_ROM_TITLE = "DodgeBlock"
 dodgeblock.z64: $(BUILD_DIR)/dodgeblock.dfs
 
 $(BUILD_DIR)/dodgeblock.dfs: $(wildcard filesystem/*)
-	$(N64_ROOTDIR)/bin/mksprite 32 16 8 filesystem/libdragon-font.png filesystem/libdragon-font.sprite
+	$(N64_INST)/bin/mksprite 32 16 8 filesystem/libdragon-font.png filesystem/libdragon-font.sprite
 	$(N64_MKDFS) $@ filesystem
 
 $(BUILD_DIR)/dodgeblock.elf: $(OBJS)
