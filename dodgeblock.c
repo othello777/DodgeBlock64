@@ -412,12 +412,8 @@ static bool IsKeyDown(int key)
 
 	if(pressed)
 	{
-		if(key == savedkey )//|| savedkey == -1)
+		if(key == savedkey)
 		{
-			/*if(key == -1)
-				savedkey = -2;
-			else*/
-				savedkey = -1;
 			return false;
 		}
 		else
@@ -427,7 +423,8 @@ static bool IsKeyDown(int key)
 			return true;
 		}
 	}
-	//savedkey = -2;
+	if(key == savedkey)
+		savedkey = -1;
 	return false;
 }
 
