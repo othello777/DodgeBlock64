@@ -111,12 +111,28 @@ void init_n64(void)
     controller_init();
 }
 
-static display_context_t _dc;
-static sprite_t *custom_font;
-
 #ifndef NULL
 	#define NULL 0
 #endif
+
+bool rumbling = false;
+bool is_rumble_present(void)
+{
+    const int controllers = get_controllers_present();
+    if (controllers & CONTROLLER_1_INSERTED)
+    {
+        const int accessories = get_accessories_present(NULL);
+        if (accessories & CONTROLLER_1_INSERTED)
+        {
+            return identify_accessory(0) == ACCESSORY_RUMBLEPAK;
+        }
+    }
+    return false;
+}
+
+static display_context_t _dc;
+static sprite_t *custom_font;
+
 /*#ifndef bool
 	typedef enum { false, true } bool;
 #endif*/
@@ -1181,7 +1197,14 @@ static void DeathScreen(int Place)
 		UseBoard[Place][0] = '#';
 		StringBuilderBuild();
 		TextBoxReplaceRtf(WriteBoard);
-		DoSleep(700);
+		if(is_rumble_present())
+		{
+			rumble_start(0);
+			DoSleep(700);
+			rumble_stop(0);
+		}
+		else
+			DoSleep(700);
 
 		deathinit();
 		UseBoard[Place][0] = '@';
@@ -1544,6 +1567,8 @@ static void OnDeath(int j)
 
 static void BlockHandling(void)
 {
+	if(rumbling)
+		rumble_stop(0);
 	//=======V====Falling=Objects====V======
 
 	//H axis
@@ -1572,7 +1597,11 @@ static void BlockHandling(void)
 									(TwoPlayerMode == true && j == Position2 && i == 1)))
 							{
 								Score += 50;
-
+								if(is_rumble_present())
+								{
+									rumble_start(0);
+									rumbling = true;
+								}
 								ScoreFlashTimer = TimerCounter;
 							}
 						}
