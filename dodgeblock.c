@@ -33,11 +33,453 @@
 #define PAD_ACCELERATION 10
 #define PAD_CHECK_TIME   40
 
+#define CHANNEL_SFX1    0
 
 unsigned short gButtons = 0;
 struct controller_data gKeys;
 int fontsize = 1;
 volatile int gTicks; // incremented every vblank
+#ifndef NULL
+	#define NULL 0
+#endif
+wav64_t sfx_beep;
+int MusicCMDs[255][2];
+int MusicTick = 0;
+int MusicIndex = 0;
+bool PlayingMusic = true;
+bool PlayingSfx = false;
+int SfxIndex = 0;
+int sfxCMDs[7][2] = {
+		{1000, 50},
+		{600, 50},
+		{400, 50},
+		{200, 50},
+		{100, 50},
+		{-1, -1},
+	};
+
+
+static void initMusic()
+{
+	int index = 0;
+	void Beep(float freq, int ms)
+	{
+		MusicCMDs[index][0] = freq;
+		MusicCMDs[index][1] = ms;
+		index++;
+	}
+	void Sleep(int ms)
+	{
+		MusicCMDs[index][0] = 0;
+		MusicCMDs[index][1] = ms;
+		index++;
+	}
+	// 800 = 1/4 note
+	// 400 = 8th note
+	// 200 16th note
+
+	//----
+	Beep(480, 200);
+
+	Beep(1568, 200);
+
+	Beep(1568, 200);
+
+	Beep(1568, 200);
+
+
+
+	Beep(739.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(783.99, 200);
+
+
+
+	Beep(369.99, 200);
+
+	Beep(392, 200);
+
+	Beep(369.99, 200);
+
+	Beep(392, 200);
+
+
+
+	Beep(392, 400);
+
+	Beep(196, 400);
+
+	//---- start
+
+	Beep(739.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(739.99, 200);
+
+
+
+	Beep(783.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(739.99, 200);
+
+	Beep(830.99, 200);
+
+
+
+	Beep(880, 200);
+
+	Beep(830.61, 200);
+
+	Beep(880, 200);
+
+
+	Beep(987.77, 400);
+
+
+	Beep(880, 200);
+
+	Beep(783.99, 200);
+
+	Beep(698.46, 200);
+
+	//----
+
+	Beep(739.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(739.99, 200);
+
+
+
+	Beep(783.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(739.99, 200);
+
+	Beep(783.99, 200);
+
+
+
+	Beep(880, 200);
+
+	Beep(830.61, 200);
+
+	Beep(880, 200);
+
+	Beep(987.77, 400);
+
+	//Thread.Sleep(200);
+
+	//Beep(1108, 10);
+	Beep(1174.7, 200);
+	//Beep(1480, 10);
+	Beep(1568, 200);
+
+	Sleep(200);
+
+	//---
+
+	Beep(739.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(739.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(739.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(880, 200);
+
+	Beep(830.61, 200);
+
+	Beep(880, 200);
+
+	Beep(987.77, 400);
+
+
+	Beep(880, 200);
+
+	Beep(783.99, 200);
+
+	Beep(698.46, 200);
+
+
+	Beep(659.25, 200);
+
+	Beep(698.46, 200);
+
+	Beep(784, 200);
+
+	Beep(880, 400);
+
+	Beep(784, 200);
+
+	Beep(698.46, 200);
+
+	Beep(659.25, 200);
+
+
+
+	Beep(587.33, 200);
+
+	Beep(659.25, 200);
+
+	Beep(698.46, 200);
+
+	Beep(784, 400);
+
+	Beep(698.46, 200);
+
+	Beep(659.25, 200);
+
+	Beep(587.33, 200);
+
+
+
+	Beep(523.25, 200);
+
+	Beep(587.33, 200);
+
+	Beep(659.25, 200);
+
+	Beep(698.46, 400);
+
+	Beep(659.25, 200);
+
+	Beep(587.33, 200);
+
+	Beep(493.88, 200);
+
+	Beep(523.25, 200);
+
+
+	Sleep(400);
+	Beep(349.23, 400);
+
+	Beep(392, 200);
+
+	Beep(329.63, 200);
+
+	Beep(523.25, 200);
+
+	Beep(493.88, 200);
+
+	Beep(466.16, 200);
+
+
+
+	Beep(440, 200);
+
+	Beep(493.88, 200);
+
+	Beep(523.25, 200);
+
+	Beep(880, 200);
+
+	Beep(493.88, 200);
+
+	Beep(880, 200);
+
+	Beep(1760, 200);
+
+	Beep(440, 200);
+
+
+
+	Beep(392, 200);
+
+	Beep(440, 200);
+
+	Beep(493.88, 200);
+
+	Beep(783.99, 200);
+
+	Beep(440, 200);
+
+	Beep(783.99, 200);
+
+	Beep(1568, 200);
+
+	Beep(392, 200);
+
+
+
+	Beep(349.23, 200);
+
+	Beep(392, 200);
+
+	Beep(440, 200);
+
+	Beep(698.46, 200);
+
+	Beep(415.2, 200);
+
+	Beep(698.46, 200);
+
+	Beep(1396.92, 200);
+
+	Beep(349.23, 200);
+
+
+
+	Beep(329.63, 200);
+
+	Beep(311.13, 200);
+
+	Beep(329.63, 200);
+
+	Beep(659.25, 200);
+
+	Beep(698.46, 400);
+
+	Beep(783.99, 400);
+
+
+
+	Beep(440, 200);
+
+	Beep(493.88, 200);
+
+	Beep(523.25, 200);
+
+	Beep(880, 200);
+
+	Beep(493.88, 200);
+
+	Beep(880, 200);
+
+	Beep(1760, 200);
+
+	Beep(440, 200);
+
+
+
+	Beep(392, 200);
+
+	Beep(440, 200);
+
+	Beep(493.88, 200);
+
+	Beep(783.99, 200);
+
+	Beep(440, 200);
+
+	Beep(783.99, 200);
+
+	Beep(1568, 200);
+
+	Beep(392, 200);
+
+
+
+	Beep(349.23, 200);
+
+	Beep(392, 200);
+
+	//Beep(440, 00);
+
+	Beep(698.46, 200);
+
+	Beep(659.25, 200);
+
+	Beep(698.46, 200);
+
+	Beep(739.99, 200);
+
+	Beep(783.99, 200);
+
+	Beep(392, 200);
+
+	Beep(392, 200);
+
+	Beep(392, 200);
+
+	Beep(392, 200);
+
+	Beep(196, 200);
+
+	Beep(196, 200);
+
+	Beep(196, 200);
+
+
+
+	Beep(185, 200);
+
+	Beep(196, 200);
+
+	Beep(185, 200);
+
+	Beep(196, 200);
+
+	Beep(207.65, 200);
+
+	Beep(220, 200);
+
+	Beep(233.08, 200);
+
+	Beep(246.94, 200);
+
+	MusicCMDs[index][0] = -1;
+	MusicCMDs[index][1] = -1;
+}
+
+static void updateMusic()
+{
+	if(MusicTick <= gTicks && PlayingMusic)//end of command, begin next
+	{
+		mixer_ch_stop(CHANNEL_SFX1);//stop previous note
+		MusicIndex++;
+		if(MusicCMDs[MusicIndex][1] == -1) //if reached end, restart
+			MusicIndex = 0;
+		MusicTick = gTicks + (MusicCMDs[MusicIndex][1] / (1000.0 / 60.0));
+		if(MusicCMDs[MusicIndex][0] > 0){
+			wav64_play(&sfx_beep, CHANNEL_SFX1);
+			mixer_ch_set_freq(CHANNEL_SFX1, sfx_beep.wave.frequency * (MusicCMDs[MusicIndex][0]/220.0));
+		}
+	}
+	if(MusicTick <= gTicks && PlayingSfx)//end of command, begin next
+	{
+		mixer_ch_stop(CHANNEL_SFX1);//stop previous note
+		SfxIndex++;
+		if(sfxCMDs[SfxIndex][1] == -1) //if reached end, stop
+		{
+			SfxIndex = 0;
+			PlayingSfx = false;
+		}
+		MusicTick = gTicks + (sfxCMDs[SfxIndex][1] / (1000.0 / 60.0));
+		if(sfxCMDs[SfxIndex][0] > 0){
+			wav64_play(&sfx_beep, CHANNEL_SFX1);
+			mixer_ch_set_freq(CHANNEL_SFX1, sfx_beep.wave.frequency * (sfxCMDs[SfxIndex][0] / 220.0));
+		}
+	}
+	if (audio_can_write() && (PlayingMusic || PlayingSfx))
+	{
+		short *buf = audio_write_begin();
+		mixer_poll(buf, audio_get_buffer_length());
+		audio_write_end();
+	}
+}
 
 /* input - do getButtons() first, then getAnalogX() and/or getAnalogY() */
 unsigned short getButtons(int pad)
@@ -97,7 +539,10 @@ void vblCallback(void)
 void delay(int cnt)
 {
     int then = gTicks + cnt + 1;
-    while (then > gTicks) ;
+    while (then > gTicks)
+    {
+    	updateMusic();
+    }
 }
 
 /* initialize console hardware */
@@ -109,11 +554,16 @@ void init_n64(void)
     register_VI_handler(vblCallback);
 
     controller_init();
-}
 
-#ifndef NULL
-	#define NULL 0
-#endif
+    int ret = dfs_init(DFS_DEFAULT_LOCATION);
+	assert(ret == DFS_ESUCCESS);
+
+	audio_init(44100, 4);
+	mixer_init(4);  // Initialize up to 4 channels
+	wav64_open(&sfx_beep, "rom:/square.wav64");
+	mixer_ch_set_limits(CHANNEL_SFX1, 0, 128000, 0);
+	initMusic();
+}
 
 bool rumbling = false;
 bool is_rumble_present(void)
@@ -641,7 +1091,8 @@ static void Initialize(void)
 	{
 		//fix https error
 		ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
-		ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | (SecurityProtocolType)(0xc0 | 0x300 | 0xc00);
+		ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 |
+		(SecurityProtocolType)(0xc0 | 0x300 | 0xc00);
 
 		//Get Website HTML
 		string htmlCode;
@@ -1041,7 +1492,8 @@ static void WriteToScreen(void)
 		{
 			StringBuilderSetColor(Yellow);
 
-			if (ScoreFlashTimer <= TimerCounter && ScoreFlashTimer > TimerCounter - 10 && ColorMode == true && TimerCounter > 20)
+			if (ScoreFlashTimer <= TimerCounter && ScoreFlashTimer >
+			TimerCounter - 10 && ColorMode == true && TimerCounter > 20)
 				StringBuilderSetColor(Magenta);
 
 			if(CheckPointFlasher())
@@ -2081,6 +2533,7 @@ void Game(void)
 
 	//if (MuteMusic)
 	//	music.PauseMusic();
+	//PlayingMusic = true;
 
 	if (Mode > MaxMode)
 	{
