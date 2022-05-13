@@ -8,6 +8,7 @@ DodgeBlock website: https://dodgeblock.cf
 - [x] Normal Mode (partial)
 - [ ] All Modes
 - [x] Colors
+- [ ] Music
 - [x] Settings Menu (Baisc)
 - [ ] New Settings Menu
 - [ ] Saving
