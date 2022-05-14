@@ -46,10 +46,11 @@ wav64_t sfx_beep;
 int MusicCMDs[255][2];
 int MusicTick = 0;
 int MusicIndex = 0;
-bool PlayingMusic = true;
+bool PlayingMusic = false;
 bool PlayingSfx = false;
 int SfxIndex = 0;
 int sfxCMDs[7][2] = {
+		{1000, 50},
 		{1000, 50},
 		{600, 50},
 		{400, 50},
@@ -79,6 +80,7 @@ static void initMusic()
 	// 200 16th note
 
 	//----
+	Beep(480, 200);
 	Beep(480, 200);
 
 	Beep(1568, 200);
@@ -448,13 +450,17 @@ static void updateMusic()
 {
 	if(MusicTick <= gTicks && PlayingMusic)//end of command, begin next
 	{
-		mixer_ch_stop(CHANNEL_SFX1);//stop previous note
+		//if(!(MusicIndex == 0 && mixer_ch_playing(CHANNEL_SFX1)))
 		MusicIndex++;
+		mixer_ch_stop(CHANNEL_SFX1);//stop previous note
 		if(MusicCMDs[MusicIndex][1] == -1) //if reached end, restart
 			MusicIndex = 0;
 		MusicTick = gTicks + (MusicCMDs[MusicIndex][1] / (1000.0 / 60.0));
 		if(MusicCMDs[MusicIndex][0] > 0){
 			wav64_play(&sfx_beep, CHANNEL_SFX1);
+			int f = MusicCMDs[MusicIndex][0];
+			//snprintf(smolbuf1, 20, "       Score: %d", Score);
+			debugf("TEST: %d \n", f);
 			mixer_ch_set_freq(CHANNEL_SFX1, sfx_beep.wave.frequency * (MusicCMDs[MusicIndex][0]/220.0));
 		}
 	}
@@ -558,6 +564,8 @@ void init_n64(void)
     int ret = dfs_init(DFS_DEFAULT_LOCATION);
 	assert(ret == DFS_ESUCCESS);
 
+	debug_init_isviewer();
+
 	audio_init(44100, 4);
 	mixer_init(4);  // Initialize up to 4 channels
 	wav64_open(&sfx_beep, "rom:/square.wav64");
@@ -603,10 +611,10 @@ static char Block;
 //static Random random2 = new Random(DateTime.Now.Second);
 //static Write write = new Write();
 //static GameMusic music = new GameMusic();
-static char Stringbuilder[400]; // new StringBuilder();
+static char Stringbuilder[600]; // new StringBuilder();
 //static KeyCode PressedKey = KeyCode.None;
 //static KeyCode JustPressedKey = KeyCode.None;
-static char WriteBoard[400];
+static char WriteBoard[600];
 //static char *Version = "1.5.2 - RB";
 //static char *Title = strcat("DodgeBlock ", Version);
 static int MaxMode = 4;
@@ -728,13 +736,13 @@ static void TextBoxReplace(char *input)
 			{
 				color = graphics_make_color(r, g, b, 0xFF);
 				graphics_set_color(color, 0);
-				ptr2++;
+				memmove(ptr2, ptr2+1, strlen(ptr2));
 			}
 		while(ptr2 != NULL)
 		{
 			if(ptr2 != NULL)
 				if(ptr2[0] == 'c')
-					ptr2+=2;
+					memmove(ptr2, ptr2+2, strlen(ptr2));
 			//bool startofline = false;
 			switch (ptr2[0])
 			{
@@ -1214,7 +1222,7 @@ static void InitConsoleColors(void)
 static void SettingsMenu()
 {
 	SetFont(1);
-	//music.PauseMusic();
+	PlayingMusic = false;
 
 	BlueBackground(true);
 	StringBuilderSetColor(White);
@@ -1274,8 +1282,8 @@ static void SettingsMenu()
 
 		DoSleep(60);
 	}
-	//if (MuteMusic == false)
-	//	music.ResumeMusic();
+	if (MuteMusic == false)
+		PlayingMusic = true;
 	BlueBackground(false);
 	SetFont(2);
 
@@ -1785,12 +1793,12 @@ static void DoCheckPoints(int savescore)
 static void OnDeath(int j)
 {
 	(void)j;
-	/*music.PauseMusic();
+	PlayingMusic = false;
 
 	if (MuteSfx == false)
-		music.DieNoise();
+		PlayingSfx = true;
 
-	// log highscore
+	/*// log highscore
 	if (loadsuccess && Score == HighScore && !(Mode == 4 && customModeC.CustomModeAble))
 	{
 		if (Mode == 0)
@@ -2012,8 +2020,8 @@ static void OnDeath(int j)
 	ResetGame();
 	DoCheckPoints(savescore);
 
-	//if (MuteMusic == false)
-	//	music.ResumeMusic();
+	if (MuteMusic == false)
+		PlayingMusic = true;
 	InitConsoleColors();
 }
 
@@ -2533,7 +2541,7 @@ void Game(void)
 
 	//if (MuteMusic)
 	//	music.PauseMusic();
-	//PlayingMusic = true;
+	PlayingMusic = true;
 
 	if (Mode > MaxMode)
 	{
@@ -2552,15 +2560,10 @@ void Game(void)
 
 	TextBoxWriteLineRtf("\nQuitting...");
 
-	/*if (MuteMusic == false)
-		music.TerminateMusic();
-	else
-	{
-		music.ResumeMusic();
-		music.TerminateMusic();
-	}
+	PlayingMusic = false;
+	MusicIndex = 0;
 
-	DiscordDB.die();*/
+	/*DiscordDB.die();*/
 
 	DoSleep(1000);
 	//CloseThis();
