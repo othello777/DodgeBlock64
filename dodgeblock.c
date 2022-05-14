@@ -611,10 +611,10 @@ static char Block;
 //static Random random2 = new Random(DateTime.Now.Second);
 //static Write write = new Write();
 //static GameMusic music = new GameMusic();
-static char Stringbuilder[600]; // new StringBuilder();
+static char Stringbuilder[777]; // new StringBuilder();
 //static KeyCode PressedKey = KeyCode.None;
 //static KeyCode JustPressedKey = KeyCode.None;
-static char WriteBoard[600];
+static char WriteBoard[777];
 //static char *Version = "1.5.2 - RB";
 //static char *Title = strcat("DodgeBlock ", Version);
 static int MaxMode = 4;
@@ -673,7 +673,7 @@ static int OldPosition2;
 static char BackBoard[20][20];
 static char UseBoard[20][20];
 
-static char slog[7][23];
+static char slog[20][40];
 static int initfill = 0;
 static int vl = 6;
 static bool bluebg = false;
@@ -822,7 +822,7 @@ static void TextBoxWriteLine(char *line)
 		strcpy(slog[vl], line);
 
 		strcpy(slog[initfill], line);
-		char lined[127] = "";
+		char lined[350];
 		int i = 0;
 		while(i <= vl)
 		{
@@ -1405,12 +1405,12 @@ static void InitStringBuilder(void)
 	//	 strcat(Stringbuilder,"        Score:" + Score +  @" \n\n "
 	//	   + "                     " + Math.Round(BenchFPS.DoGetFps(), 5) + "FPS");
 	//else
-	char smolbuf1[20];
-	snprintf(smolbuf1, 20, "       Score: %d", Score);
+	char smolbuf1[26];
+	snprintf(smolbuf1, 25, "       Score: %d", Score);
 	//strcat(Stringbuilder, smolbuf1);
 
-	char smolbuf2[40];
-	snprintf(smolbuf2, 40, "%s\n  High Score: %d\n", smolbuf1, HighScore);
+	char smolbuf2[55];
+	snprintf(smolbuf2, 50, "%s\n  High Score: %d\n", smolbuf1, HighScore);
 	strcat(Stringbuilder, smolbuf2);
 	//+ "                     " + Math.Round(BenchFPS.DoGetFps(), 5) + "FPS");
 }
@@ -1433,9 +1433,9 @@ static void BoardAppend(void)
 {
 	if (Mode == 1 /*|| Mode == 4 && !customModeC.CustomModeAble*/)
 	{
-		char smolbuf1[20];
+		char smolbuf1[21];
 		snprintf(smolbuf1, 20, "\n\n  Ammo=%d", Ammo);
-		char smolbuf2[40];
+		char smolbuf2[41];
 		snprintf(smolbuf2, 40, "%s Shields=%d\n", smolbuf1, Shields);
 		strcat(Stringbuilder, smolbuf2);
 
@@ -1520,7 +1520,7 @@ static void WriteToScreen(void)
 			//StringBuilderSetColor(UseBoard[j, i].Color);
 			SetCharacterColor((char)UseBoard[j][i]);
 			//snprintf(Stringbuilder, 200, "%s", Stringbuilder);//, UseBoard[j][i]);
-			char ape[2];// = {((char)UseBoard[j][i])};
+			char ape[3];// = {((char)UseBoard[j][i])};
 			snprintf(ape, 2, "%c", (char)UseBoard[j][i]);
 			strcat(Stringbuilder, ape);
 			//char *a = strcat("","");
@@ -1624,7 +1624,7 @@ static void StringBuilderBuild(void)
 		for (int j = 0; j < GameWidth; j++)
 		{
 			 //strcat(Stringbuilder,(char)UseBoard[j][i]);
-			char ape[2];// = {((char)UseBoard[j][i])};
+			char ape[3];// = {((char)UseBoard[j][i])};
 			snprintf(ape, 2, "%c", (char)UseBoard[j][i]);
 			strcat(Stringbuilder, ape);
 		}
