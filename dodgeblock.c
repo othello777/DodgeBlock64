@@ -7,6 +7,8 @@
 #include <stdlib.h>
 
 /* hardware definitions */
+#define HZ 60
+
 // Pad buttons
 #define A_BUTTON(a)     ((a) & 0x8000)
 #define B_BUTTON(a)     ((a) & 0x4000)
@@ -459,7 +461,7 @@ static void updateMusic()
 		if(MusicCMDs[MusicIndex][0] > 0){
 			wav64_play(&sfx_beep, CHANNEL_SFX1);
 			int f = MusicCMDs[MusicIndex][0];
-			//snprintf(smolbuf1, 20, "       Score: %d", Score);
+			//dosnprintf(smolbuf1, 20, "       Score: %d", Score);
 			debugf("TEST: %d \n", f);
 			mixer_ch_set_freq(CHANNEL_SFX1, sfx_beep.wave.frequency * (MusicCMDs[MusicIndex][0]/220.0));
 		}
@@ -573,7 +575,6 @@ void init_n64(void)
 	initMusic();
 }
 
-bool rumbling = false;
 bool is_rumble_present(void)
 {
     const int controllers = get_controllers_present();
@@ -616,7 +617,7 @@ static char Stringbuilder[777]; // new StringBuilder();
 //static KeyCode JustPressedKey = KeyCode.None;
 static char WriteBoard[777];
 //static char *Version = "1.5.2 - RB";
-//static char *Title = strcat("DodgeBlock ", Version);
+//static char *Title = dostrcat("DodgeBlock ", Version);
 static int MaxMode = 4;
 //static char *settingslocation;
 //static char *SecretCode = "You have not died yet.";
@@ -672,12 +673,14 @@ static int OldPosition;
 static int OldPosition2;
 static char BackBoard[20][20];
 static char UseBoard[20][20];
+static int button;
 
 static char slog[20][40];
 static int initfill = 0;
 static int vl = 6;
 static bool bluebg = false;
 static int savedkey;
+bool rumbling = false;
 
 typedef enum {
 		Black,
@@ -715,13 +718,11 @@ static void SetFont(int fontsz)
 static void TextBoxReplace(char *input)
 {
 	char str[strlen(input) + 1];
-	strcpy(str, input);
+	dostrcpy(str, input);
 	char *save;
 	char delim[] = "\n";
 	char *ptr = strtok_r(str, delim, &save);
 	int line = 0;
-
-	//lcd_clear_display();
 	unsigned int color;
 	_dc = lockVideo(1);
 	graphics_fill_screen(_dc, graphics_make_color(0x00, 0x00, 0xFF * bluebg, 0xFF));
@@ -733,11 +734,11 @@ static void TextBoxReplace(char *input)
 		char *ptr2 = strtok_r(ptr, delim2, &save2);
 		int col = 0;
 		void setcolor(int r, int g, int b)
-			{
-				color = graphics_make_color(r, g, b, 0xFF);
-				graphics_set_color(color, 0);
-				memmove(ptr2, ptr2+1, strlen(ptr2));
-			}
+		{
+			color = graphics_make_color(r, g, b, 0xFF);
+			graphics_set_color(color, 0);
+			memmove(ptr2, ptr2+1, strlen(ptr2));
+		}
 		while(ptr2 != NULL)
 		{
 			if(ptr2 != NULL)
@@ -798,7 +799,6 @@ static void TextBoxReplace(char *input)
 		ptr = strtok_r(NULL, delim, &save);
 		line = line + 1;
 	}
-	//lcd_update();
 	unlockVideo(_dc);
 }
 
@@ -816,18 +816,18 @@ static void TextBoxWriteLine(char *line)
 		int n = 1;
 		while(n <= vl)
 		{
-			strcpy(slog[n - 1], slog[n]);
+			dostrcpy(slog[n - 1], slog[n]);
 			n = n + 1;
 		}
-		strcpy(slog[vl], line);
+		dostrcpy(slog[vl], line);
 
-		strcpy(slog[initfill], line);
+		dostrcpy(slog[initfill], line);
 		char lined[350];
 		int i = 0;
 		while(i <= vl)
 		{
-			strcat(lined, "\n");
-			strcat(lined, slog[i]);
+			dostrcat(lined, "\n");
+			dostrcat(lined, slog[i]);
 			i = i + 1;
 		}
 		TextBoxReplace(lined);
@@ -835,14 +835,14 @@ static void TextBoxWriteLine(char *line)
 	else
 	{
 		//puts("log3");
-		strcpy(slog[initfill], line);
+		dostrcpy(slog[initfill], line);
 		char lined[64] = "";
 		int i = 0;
 		//puts("log4");
 		while(i <= vl)
 		{
-			strcat(lined, "\n");
-			strcat(lined, slog[i]);
+			dostrcat(lined, "\n");
+			dostrcat(lined, slog[i]);
 			i = i + 1;
 		}
 		//puts("log5");
@@ -860,6 +860,7 @@ static void GameInitialized(void)
 {
 
 }
+
 static void BlueBackground(bool toggle)
 {
 	bluebg = toggle;
@@ -867,12 +868,12 @@ static void BlueBackground(bool toggle)
 
 static void DoSleep(int ms)
 {
-	delay(60.0 / 1000.0 * ms);
+	delay(HZ / 1000.0 * ms);
 }
 
 static bool IsKeyDown(int key)
 {
-	unsigned short button = getButtons(0);
+	button = getButtons(0);
 	bool pressed = false;
 
 	if((DU_BUTTON(button) || CU_BUTTON(button)) && key == 0)
@@ -998,7 +999,7 @@ static void Initialize(void)
 			UseBoard[j][i] = '.';
 		}
 	}
-	//strcpy(UseBoard, BackBoard);//.Clone() as char[,];
+	//dostrcpy(UseBoard, BackBoard);//.Clone() as char[,];
 
 	//DiscordDB.DoesWork = false;//= DiscordDB.DiscordInit();
 
@@ -1099,8 +1100,7 @@ static void Initialize(void)
 	{
 		//fix https error
 		ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
-		ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 |
-		(SecurityProtocolType)(0xc0 | 0x300 | 0xc00);
+		ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | (SecurityProtocolType)(0xc0 | 0x300 | 0xc00);
 
 		//Get Website HTML
 		string htmlCode;
@@ -1173,40 +1173,40 @@ static void StringBuilderSetColor(int color)
 	switch (color)
 	{
 		case Black:
-			 strcat(Stringbuilder,"\\cf0");
+			 dostrcat(Stringbuilder,"\\cf0");
 			break;
 		case White:
-			 strcat(Stringbuilder,"\\cf1");
+			 dostrcat(Stringbuilder,"\\cf1");
 			break;
 		case Green:
-			 strcat(Stringbuilder,"\\cf2");
+			 dostrcat(Stringbuilder,"\\cf2");
 			break;
 		case Yellow:
-			 strcat(Stringbuilder,"\\cf3");
+			 dostrcat(Stringbuilder,"\\cf3");
 			break;
 		case Magenta:
-			 strcat(Stringbuilder,"\\cf4");
+			 dostrcat(Stringbuilder,"\\cf4");
 			break;
 		case Red:
-			 strcat(Stringbuilder,"\\cf5");
+			 dostrcat(Stringbuilder,"\\cf5");
 			break;
 		case Blue:
-			 strcat(Stringbuilder,"\\cf6");
+			 dostrcat(Stringbuilder,"\\cf6");
 			break;
 		case Cyan:
-			 strcat(Stringbuilder,"\\cf7");
+			 dostrcat(Stringbuilder,"\\cf7");
 			break;
 		case DarkMagenta:
-			 strcat(Stringbuilder,"\\cf8");
+			 dostrcat(Stringbuilder,"\\cf8");
 			break;
 		case DarkGreen:
-			 strcat(Stringbuilder,"\\cf9");
+			 dostrcat(Stringbuilder,"\\cf9");
 			break;
 		/*case DarkGray:
-			 strcat(Stringbuilder,"\\cf10");
+			 dostrcat(Stringbuilder,"\\cf10");
 			break;*/
 		default:
-			 strcat(Stringbuilder,"\\cf1");
+			 dostrcat(Stringbuilder,"\\cf1");
 			break;
 
 	}
@@ -1219,7 +1219,7 @@ static void InitConsoleColors(void)
 }
 
 //also ye old code
-static void SettingsMenu()
+static void SettingsMenu(void)
 {
 	SetFont(1);
 	PlayingMusic = false;
@@ -1362,31 +1362,31 @@ static void PositionPlayers(void)
 		switch (value)
 		{
 			case ConsoleColor.Black:
-				 strcat(Stringbuilder,"\highlight0");
+				 dostrcat(Stringbuilder,"\highlight0");
 				break;
 			case ConsoleColor.White:
-				 strcat(Stringbuilder,"\highlight1");
+				 dostrcat(Stringbuilder,"\highlight1");
 				break;
 			case ConsoleColor.Magenta:
-				 strcat(Stringbuilder,"\highlight4");
+				 dostrcat(Stringbuilder,"\highlight4");
 				break;
 			case ConsoleColor.Green:
-				 strcat(Stringbuilder,"\highlight2");
+				 dostrcat(Stringbuilder,"\highlight2");
 				break;
 			case ConsoleColor.Yellow:
-				 strcat(Stringbuilder,"\highlight3");
+				 dostrcat(Stringbuilder,"\highlight3");
 				break;
 			case ConsoleColor.Red:
-				 strcat(Stringbuilder,"\highlight5");
+				 dostrcat(Stringbuilder,"\highlight5");
 				break;
 			case ConsoleColor.Blue:
-				 strcat(Stringbuilder,"\highlight6");
+				 dostrcat(Stringbuilder,"\highlight6");
 				break;
 			case ConsoleColor.Cyan:
-				 strcat(Stringbuilder,"\highlight7");
+				 dostrcat(Stringbuilder,"\highlight7");
 				break;
 			default:
-				 strcat(Stringbuilder,"\highlight0");
+				 dostrcat(Stringbuilder,"\highlight0");
 				break;
 
 		}
@@ -1398,20 +1398,20 @@ static void PositionPlayers(void)
 static void InitStringBuilder(void)
 {
 	//prepare Stringbuilder
-	strcpy(Stringbuilder, "");
+	dostrcpy(Stringbuilder, "");
 	//Stringbuilder +=  ("" + BoardSize);
 	StringBuilderSetColor(White);
 	//if (Mode == 4 && customModeC.CustomModeAble)
-	//	 strcat(Stringbuilder,"        Score:" + Score +  @" \n\n "
+	//	 dostrcat(Stringbuilder,"        Score:" + Score +  @" \n\n "
 	//	   + "                     " + Math.Round(BenchFPS.DoGetFps(), 5) + "FPS");
 	//else
-	char smolbuf1[26];
-	snprintf(smolbuf1, 25, "       Score: %d", Score);
-	//strcat(Stringbuilder, smolbuf1);
+	char smolbuf1[20];
+	dosnprintf(smolbuf1, 20, "       Score: %d", Score);
+	//dostrcat(Stringbuilder, smolbuf1);
 
-	char smolbuf2[55];
-	snprintf(smolbuf2, 50, "%s\n  High Score: %d\n", smolbuf1, HighScore);
-	strcat(Stringbuilder, smolbuf2);
+	char smolbuf2[40];
+	dosnprintf(smolbuf2, 40, "%s\n  High Score: %d\n", smolbuf1, HighScore);
+	dostrcat(Stringbuilder, smolbuf2);
 	//+ "                     " + Math.Round(BenchFPS.DoGetFps(), 5) + "FPS");
 }
 
@@ -1433,11 +1433,11 @@ static void BoardAppend(void)
 {
 	if (Mode == 1 /*|| Mode == 4 && !customModeC.CustomModeAble*/)
 	{
-		char smolbuf1[21];
-		snprintf(smolbuf1, 20, "\n\n  Ammo=%d", Ammo);
-		char smolbuf2[41];
-		snprintf(smolbuf2, 40, "%s Shields=%d\n", smolbuf1, Shields);
-		strcat(Stringbuilder, smolbuf2);
+		char smolbuf1[20];
+		dosnprintf(smolbuf1, 20, "\n\n  Ammo=%d", Ammo);
+		char smolbuf2[40];
+		dosnprintf(smolbuf2, 40, "%s Shields=%d\n", smolbuf1, Shields);
+		dostrcat(Stringbuilder, smolbuf2);
 
 		InitConsoleColors();
 	}
@@ -1506,11 +1506,11 @@ static void WriteToScreen(void)
 
 			if(CheckPointFlasher())
 				StringBuilderSetColor(Cyan);
-			 strcat(Stringbuilder,"\n  | ");
+			 dostrcat(Stringbuilder,"\n  | ");
 			InitConsoleColors();
 		}
 		else
-			 strcat(Stringbuilder,"\n    ");
+			 dostrcat(Stringbuilder,"\n    ");
 
 		//static char Buff[200];
 		for (int j = 0; j < GameWidth; j++)
@@ -1519,14 +1519,14 @@ static void WriteToScreen(void)
 
 			//StringBuilderSetColor(UseBoard[j, i].Color);
 			SetCharacterColor((char)UseBoard[j][i]);
-			//snprintf(Stringbuilder, 200, "%s", Stringbuilder);//, UseBoard[j][i]);
-			char ape[3];// = {((char)UseBoard[j][i])};
-			snprintf(ape, 2, "%c", (char)UseBoard[j][i]);
-			strcat(Stringbuilder, ape);
-			//char *a = strcat("","");
+			//dosnprintf(Stringbuilder, 200, "%s", Stringbuilder);//, UseBoard[j][i]);
+			char ape[2];// = {((char)UseBoard[j][i])};
+			dosnprintf(ape, 2, "%c", (char)UseBoard[j][i]);
+			dostrcat(Stringbuilder, ape);
+			//char *a = dostrcat("","");
 		}
 
-		// strcat(Stringbuilder,"\highlight0 ");
+		// dostrcat(Stringbuilder,"\highlight0 ");
 
 		if ((Score == HighScore && !(Mode == 4/* && customModeC.CustomModeAble*/) && Flasher()) ||
 			(ScoreFlashTimer <= TimerCounter && ScoreFlashTimer > TimerCounter - 10 && TimerCounter > 20) ||
@@ -1541,20 +1541,20 @@ static void WriteToScreen(void)
 			if (CheckPointFlasher())
 				StringBuilderSetColor(Cyan);
 
-			 strcat(Stringbuilder," |");
+			 dostrcat(Stringbuilder," |");
 		}
 		else
 		{
-			 strcat(Stringbuilder,"  ");
+			 dostrcat(Stringbuilder,"  ");
 		}
 		InitConsoleColors();
 
 		for (int m = 0; m < Margin; m++)
 		{
-			 strcat(Stringbuilder," ");
+			 dostrcat(Stringbuilder," ");
 		}
 		//if (GameHeight - 1 - i < sizeof BoardToSide / sizeof BoardToSide[0])
-		//	 strcat(Stringbuilder,BoardToSide[GameHeight - 1 - i]);
+		//	 dostrcat(Stringbuilder,BoardToSide[GameHeight - 1 - i]);
 
 
 
@@ -1562,7 +1562,7 @@ static void WriteToScreen(void)
 
 	BoardAppend();
 
-	strcpy(WriteBoard, Stringbuilder);
+	dostrcpy(WriteBoard, Stringbuilder);
 	TextBoxReplaceRtf(WriteBoard);
 }
 
@@ -1606,50 +1606,50 @@ static void StringBuilderBuild(void)
 			if ((Score == HighScore && Flasher()) || (ScoreFlashTimer <= TimerCounter &&
 				ScoreFlashTimer > TimerCounter - 10 && TimerCounter > 20))
 			{
-				 strcat(Stringbuilder,"\n  | ");
+				 dostrcat(Stringbuilder,"\n  | ");
 			}
 			else
-				 strcat(Stringbuilder,"\n    ");
+				 dostrcat(Stringbuilder,"\n    ");
 		}
 		else
 		{
 			if ((Score == HighScore && Flasher()) || (ScoreFlashTimer <= TimerCounter &&
 				ScoreFlashTimer > TimerCounter - 10 && TimerCounter > 20))
 			{
-				 strcat(Stringbuilder,"\n  | ");
+				 dostrcat(Stringbuilder,"\n  | ");
 			}
 			else
-				 strcat(Stringbuilder,"\n    ");
+				 dostrcat(Stringbuilder,"\n    ");
 		}
 		for (int j = 0; j < GameWidth; j++)
 		{
-			 //strcat(Stringbuilder,(char)UseBoard[j][i]);
-			char ape[3];// = {((char)UseBoard[j][i])};
-			snprintf(ape, 2, "%c", (char)UseBoard[j][i]);
-			strcat(Stringbuilder, ape);
+			 //dostrcat(Stringbuilder,(char)UseBoard[j][i]);
+			char ape[2];// = {((char)UseBoard[j][i])};
+			dosnprintf(ape, 2, "%c", (char)UseBoard[j][i]);
+			dostrcat(Stringbuilder, ape);
 		}
 
 		if ((Score == HighScore && Flasher()) || (ScoreFlashTimer <= TimerCounter &&
 			ScoreFlashTimer > TimerCounter - 10 && TimerCounter > 20))
 		{
 
-			 strcat(Stringbuilder," |  ");
+			 dostrcat(Stringbuilder," |  ");
 
 		}
 
 	}
 
-	strcpy(WriteBoard, Stringbuilder);;
+	dostrcpy(WriteBoard, Stringbuilder);;
 }
 
 static void DeathScreen(int Place)
 {
 	void deathinit(void)
 	{
-		 strcpy(Stringbuilder, "");
-		 //strcat(Stringbuilder, BoardSize);
+		 dostrcpy(Stringbuilder, "");
+		 //dostrcat(Stringbuilder, BoardSize);
 		StringBuilderSetColor(Red);
-		 strcat(Stringbuilder,"\n\n\n \n\n ");
+		 dostrcat(Stringbuilder,"\n\n\n \n\n ");
 	}
 	if (ColorMode)
 	{
@@ -1818,29 +1818,29 @@ static void OnDeath(int j)
 	// setting deathscreen
 	void OnPostDeathScreen(void)
 	{
-		strcpy(Stringbuilder, "");
+		dostrcpy(Stringbuilder, "");
 
 		/*if (IsHolloween)
 		{
 			StringBuilderSetColor = ConsoleColor.DarkMagenta;
-			 strcat(Stringbuilder,"" + BoardSize + " ");
+			 dostrcat(Stringbuilder,"" + BoardSize + " ");
 		}
 		else if (IsThanksgiving)
 		{
 			StringBuilderSetColor = ConsoleColor.DarkGray;
-			 strcat(Stringbuilder,"" + BoardSize + " ");
+			 dostrcat(Stringbuilder,"" + BoardSize + " ");
 		}
 		else
 		{*/
 			StringBuilderSetColor(Cyan);
-			 //strcat(Stringbuilder,"" + BoardSize + " ");
+			 //dostrcat(Stringbuilder,"" + BoardSize + " ");
 		//}
 	}
 	// add endline
 	void LineBreak(void)
 	{
 		if (ColorMode)
-			strcat(Stringbuilder,"\n");
+			dostrcat(Stringbuilder,"\n");
 	}
 
 	// kill the bloody loser
@@ -1850,26 +1850,26 @@ static void OnDeath(int j)
 		{
 			DeathScreen(Position);
 			OnPostDeathScreen();
-			 strcat(Stringbuilder,"Both Players Died!");
+			 dostrcat(Stringbuilder,"Both Players Died!");
 		}
 		else if (j == Position2)
 		{
 			DeathScreen(Position2);
 			OnPostDeathScreen();
-			 strcat(Stringbuilder,"Player2 Died! (" + Avatar2 + ")");
+			 dostrcat(Stringbuilder,"Player2 Died! (" + Avatar2 + ")");
 		}
 		else
 		{
 			DeathScreen(Position);
 			OnPostDeathScreen();
-			 strcat(Stringbuilder,"Player1 Died! (" + Avatar + ")");
+			 dostrcat(Stringbuilder,"Player1 Died! (" + Avatar + ")");
 		}
 	}
 	else
 	{*/
 		DeathScreen(Position);
 		OnPostDeathScreen();
-		strcat(Stringbuilder,"\n  You Died!");
+		dostrcat(Stringbuilder,"\n  You Died!");
 	//}
 	LineBreak();
 
@@ -1877,13 +1877,13 @@ static void OnDeath(int j)
 
 	// add the results
 	char smolbuf1[20];
-	snprintf(smolbuf1, 20, "  Your Score: %d", Score);
-	strcat(Stringbuilder, smolbuf1);
+	dosnprintf(smolbuf1, 20, "  Your Score: %d", Score);
+	dostrcat(Stringbuilder, smolbuf1);
 	LineBreak();
 	if (Score >= HighScore)
 	{
 		StringBuilderSetColor(Yellow);
-		strcat(Stringbuilder,"  *New High Score!*");
+		dostrcat(Stringbuilder,"  *New High Score!*");
 		/*if (ColorMode)
 			StringBuilderSetColor = ConsoleColor.Yellow;
 
@@ -1905,63 +1905,63 @@ static void OnDeath(int j)
 	else
 	{
 		char smolbuf2[20];
-		snprintf(smolbuf2, 20, "  High Score: %d", HighScore);
-		strcat(Stringbuilder, smolbuf2);
+		dosnprintf(smolbuf2, 20, "  High Score: %d", HighScore);
+		dostrcat(Stringbuilder, smolbuf2);
 		LineBreak();
 	}
 
 
 
-	strcat(Stringbuilder,"  Playing: \n  ");
+	dostrcat(Stringbuilder,"  Playing: \n  ");
 	if (Mode == 0)
 	{
-		 strcat(Stringbuilder,"Classic Mode");
+		 dostrcat(Stringbuilder,"Classic Mode");
 	}
 	else if (Mode == 1)
 	{
-		 strcat(Stringbuilder,"Normal Mode");
+		 dostrcat(Stringbuilder,"Normal Mode");
 	}
 	else if (Mode == 2)
 	{
-		 strcat(Stringbuilder,"Expert Mode");
+		 dostrcat(Stringbuilder,"Expert Mode");
 	}
 	/*else if (Mode == 3)
 	{
-		 strcat(Stringbuilder,"Two Player Mode");
+		 dostrcat(Stringbuilder,"Two Player Mode");
 	}
 	else if (Mode == 4 && IsHolloween)
 	{
-		 strcat(Stringbuilder,"Halloween Event");
+		 dostrcat(Stringbuilder,"Halloween Event");
 	}
 	else if (Mode == 4 && IsChristmas)
 	{
-		 strcat(Stringbuilder,"Winter Event");
+		 dostrcat(Stringbuilder,"Winter Event");
 	}
 	else if (Mode == 4)
 	{
-		 strcat(Stringbuilder,"Custom Mode");
+		 dostrcat(Stringbuilder,"Custom Mode");
 	}*/
 	else
 	{
-		 strcat(Stringbuilder,"raaad mode");
+		 dostrcat(Stringbuilder,"raaad mode");
 	}
 	if((Mode == 0 || Mode == 2) && UseCheckpoints)
 	{
 		if (Score > 500)
 			LineBreak();
 		if (Score > 1000)
-			 strcat(Stringbuilder,"Checkpoint Achieved: 1000");
+			 dostrcat(Stringbuilder,"Checkpoint Achieved: 1000");
 		else if (Score > 500)
-			 strcat(Stringbuilder,"Checkpoint Achieved: 500");
+			 dostrcat(Stringbuilder,"Checkpoint Achieved: 500");
 	}
 
 	LineBreak();
 	LineBreak();
-	 strcat(Stringbuilder," \n  Up to Continue");
+	 dostrcat(Stringbuilder," \n  Up to Continue");
 	LineBreak();
-	 strcat(Stringbuilder,"  Down to Quit");
+	 dostrcat(Stringbuilder,"  Down to Quit");
 
-	strcpy(WriteBoard, Stringbuilder);;
+	dostrcpy(WriteBoard, Stringbuilder);;
 	if (ColorMode)
 		TextBoxReplaceRtf(WriteBoard);
 	else
@@ -2062,6 +2062,7 @@ static void BlockHandling(void)
 									rumble_start(0);
 									rumbling = true;
 								}
+
 								ScoreFlashTimer = TimerCounter;
 							}
 						}
@@ -2329,9 +2330,7 @@ static void BlockHandling(void)
 
 }   //=====/\===================/\======
 
-
-
-/*static void StartScreen(void)
+static void StartScreen(void)
 {
 	TextBoxWriteLine("CONGRATS! starting.");
 	DoSleep(1000);
@@ -2339,13 +2338,52 @@ static void BlockHandling(void)
 	//if(IsChristmas)
 	//	Cutscene();
 
+	int anim = 0;
+
 	bool NotStarted = true;
 	while (NotStarted)
 	{
-
-		TextBoxReplace(
-"     Version RockBox \n##############################\n#............................#\n#........@@@@@@@@@@@@........#\n#........@ Press Up @........#\n#........@@@@@@@@@@@@........#\n#............................#\n##############################\n\n   (c) othello7 2019-2021"
-				);
+		char * introanim[33] = {
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#%......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.O..........................#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.%.....@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#..O.........................#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.%.....@@@@@@@@@@@@.........#\n#...O........................#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.....%.@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.%..O.......................#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.....&.@@@@@@@@@@@@.........#\n#.%...O......................#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.....&O.....................#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.....&.O....................#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#........O...................#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.........O..................#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#..........O.................#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#...........O................#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#............O...............#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#............O...............#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.............O..............#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@....%....#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#..............O.............#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @...%.....#\n#.......@@@@@@@@@@@@.........#\n#...............O............#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @...%.....#\n#.......@@@@@@@@@@@@.........#\n#................O...........#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@..%......#\n#.................O..........#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@..%......#\n#..................O.........#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.................O.%........#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#..................O.........#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#...................O........#\n##############################\n",
+				"##############################\n#........................%...#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#....................O.......#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.....%...#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.....................O......#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.....%...#\n#.......@@@@@@@@@@@@.........#\n#......................O.....#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.....%...#\n#.......................O....#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.......................O%...#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @........%#\n#.......@@@@@@@@@@@@.........#\n#........................O...#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@........%#\n#.........................O..#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#.........................O.%#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#..........................O.#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @.........#\n#.......@@@@@@@@@@@@.........#\n#...........................O#\n##############################\n",
+				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @........%#\n#.......@@@@@@@@@@@@.........#\n#............................#\n##############################\n"
+		   };
+		char smolbuf1[270];
+		dosnprintf(smolbuf1, 270, "\n     Version RockBox \n%s\n   (c) othello7 2019-2022", introanim[anim]);
+		TextBoxReplace(smolbuf1);
+		anim++;
+		if(anim > 32)
+			anim = 0;
 		//Start Screen
 		//Animations.PlayAnimatedStartScreen();
 
@@ -2357,7 +2395,7 @@ static void BlockHandling(void)
 	}
 	TextBoxReplace("");
 	//music.PlayMusic();
-}*/
+}
 
 /*static void ConvertTwoPlayerMode()
 {
@@ -2513,7 +2551,7 @@ static void Run(void){
 		BlockHandling();
 
 
-		strcpy(WriteBoard, Stringbuilder);
+		dostrcpy(WriteBoard, Stringbuilder);
 
 		DisplayAndDelay();
 
@@ -2521,7 +2559,7 @@ static void Run(void){
 	}
 }
 
-void Game(void)
+static void Game(void)
 {
 	TextBoxWriteLine("Start!");
 	//init
@@ -2536,7 +2574,7 @@ void Game(void)
 	//InternetConnect();
 
 	TextBoxWriteLine("Start Game");
-	delay(10);
+	DoSleep(200);
 	//StartScreen();
 
 	//if (MuteMusic)
@@ -2563,7 +2601,7 @@ void Game(void)
 	PlayingMusic = false;
 	MusicIndex = 0;
 
-	/*DiscordDB.die();*/
+	//DiscordDB.die();
 
 	DoSleep(1000);
 	//CloseThis();
