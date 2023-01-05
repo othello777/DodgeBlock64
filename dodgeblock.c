@@ -696,6 +696,26 @@ typedef enum {
 		DarkGray
 } ConsoleColor;
 
+static void dosnprintf(char * buf, int bufsize, char * formatted, ...)
+{
+	/*
+	va_list va;
+	va_start (va, formatted);
+	vsnprintf(buf, bufsize, formatted, va);
+	va_end (va);
+	*/
+}
+
+static void dostrcat(char * to, const char * from)
+{
+	strcat(to, from);
+}
+
+static void dostrcpy(char * to, const char * from)
+{
+	strcpy(to, from);
+}
+
 static int GetRand(int from, int to)
 {
 	return from + (rand() / (RAND_MAX/(to - from)));

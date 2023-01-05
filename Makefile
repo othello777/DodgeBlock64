@@ -1,4 +1,3 @@
-N64_INST = ../../../../n64/toolchain
 BUILD_DIR = build
 include $(N64_INST)/include/n64.mk
 
