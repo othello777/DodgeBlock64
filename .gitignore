@@ -1,0 +1,6 @@
+.cproject
+.project
+.settings/
+build/
+filesystem/libdragon-font.sprite
+filesystem/square.wav64

@@ -3,6 +3,8 @@ include $(N64_INST)/include/n64.mk
 
 OBJS = $(BUILD_DIR)/*.o
 
+N64_CFLAGS += -Wno-error
+
 assets = $(wildcard assets/*.wav)
 assets_conv = $(addprefix filesystem/,$(notdir $(assets:%.wav=%.wav64)))
 
