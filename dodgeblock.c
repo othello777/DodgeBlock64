@@ -461,7 +461,7 @@ static void updateMusic()
 		if(MusicCMDs[MusicIndex][0] > 0){
 			wav64_play(&sfx_beep, CHANNEL_SFX1);
 			int f = MusicCMDs[MusicIndex][0];
-			//dosnprintf(smolbuf1, 20, "       Score: %d", Score);
+			//snprintf(smolbuf1, 20, "       Score: %d", Score);
 			debugf("TEST: %d \n", f);
 			mixer_ch_set_freq(CHANNEL_SFX1, sfx_beep.wave.frequency * (MusicCMDs[MusicIndex][0]/220.0));
 		}
@@ -1426,11 +1426,11 @@ static void InitStringBuilder(void)
 	//	   + "                     " + Math.Round(BenchFPS.DoGetFps(), 5) + "FPS");
 	//else
 	char smolbuf1[20];
-	dosnprintf(smolbuf1, 20, "       Score: %d", Score);
+	snprintf(smolbuf1, 20, "       Score: %d", Score);
 	//dostrcat(Stringbuilder, smolbuf1);
 
 	char smolbuf2[40];
-	dosnprintf(smolbuf2, 40, "%s\n  High Score: %d\n", smolbuf1, HighScore);
+	snprintf(smolbuf2, 40, "%s\n  High Score: %d\n", smolbuf1, HighScore);
 	dostrcat(Stringbuilder, smolbuf2);
 	//+ "                     " + Math.Round(BenchFPS.DoGetFps(), 5) + "FPS");
 }
@@ -1454,9 +1454,9 @@ static void BoardAppend(void)
 	if (Mode == 1 /*|| Mode == 4 && !customModeC.CustomModeAble*/)
 	{
 		char smolbuf1[20];
-		dosnprintf(smolbuf1, 20, "\n\n  Ammo=%d", Ammo);
+		snprintf(smolbuf1, 20, "\n\n  Ammo=%d", Ammo);
 		char smolbuf2[40];
-		dosnprintf(smolbuf2, 40, "%s Shields=%d\n", smolbuf1, Shields);
+		snprintf(smolbuf2, 40, "%s Shields=%d\n", smolbuf1, Shields);
 		dostrcat(Stringbuilder, smolbuf2);
 
 		InitConsoleColors();
@@ -1539,9 +1539,9 @@ static void WriteToScreen(void)
 
 			//StringBuilderSetColor(UseBoard[j, i].Color);
 			SetCharacterColor((char)UseBoard[j][i]);
-			//dosnprintf(Stringbuilder, 200, "%s", Stringbuilder);//, UseBoard[j][i]);
+			//snprintf(Stringbuilder, 200, "%s", Stringbuilder);//, UseBoard[j][i]);
 			char ape[2];// = {((char)UseBoard[j][i])};
-			dosnprintf(ape, 2, "%c", (char)UseBoard[j][i]);
+			snprintf(ape, 2, "%c", (char)UseBoard[j][i]);
 			dostrcat(Stringbuilder, ape);
 			//char *a = dostrcat("","");
 		}
@@ -1645,7 +1645,7 @@ static void StringBuilderBuild(void)
 		{
 			 //dostrcat(Stringbuilder,(char)UseBoard[j][i]);
 			char ape[2];// = {((char)UseBoard[j][i])};
-			dosnprintf(ape, 2, "%c", (char)UseBoard[j][i]);
+			snprintf(ape, 2, "%c", (char)UseBoard[j][i]);
 			dostrcat(Stringbuilder, ape);
 		}
 
@@ -1897,7 +1897,7 @@ static void OnDeath(int j)
 
 	// add the results
 	char smolbuf1[20];
-	dosnprintf(smolbuf1, 20, "  Your Score: %d", Score);
+	snprintf(smolbuf1, 20, "  Your Score: %d", Score);
 	dostrcat(Stringbuilder, smolbuf1);
 	LineBreak();
 	if (Score >= HighScore)
@@ -1925,7 +1925,7 @@ static void OnDeath(int j)
 	else
 	{
 		char smolbuf2[20];
-		dosnprintf(smolbuf2, 20, "  High Score: %d", HighScore);
+		snprintf(smolbuf2, 20, "  High Score: %d", HighScore);
 		dostrcat(Stringbuilder, smolbuf2);
 		LineBreak();
 	}
@@ -2399,7 +2399,7 @@ static void StartScreen(void)
 				"##############################\n#............................#\n#.......@@@@@@@@@@@@.........#\n#.......@ Press Up @........%#\n#.......@@@@@@@@@@@@.........#\n#............................#\n##############################\n"
 		   };
 		char smolbuf1[270];
-		dosnprintf(smolbuf1, 270, "\n     Version RockBox \n%s\n   (c) othello7 2019-2022", introanim[anim]);
+		snprintf(smolbuf1, 270, "\n     Version RockBox \n%s\n   (c) othello7 2019-2022", introanim[anim]);
 		TextBoxReplace(smolbuf1);
 		anim++;
 		if(anim > 32)
