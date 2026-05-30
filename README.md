@@ -3,7 +3,7 @@ DodgeBlock rebuilt with libdragon for the Nintendo 64. I took the C code from my
 on the [DodgeBlock rockbox port](https://github.com/othello777/rockbox) and adapted it to 
 libdragon. 
 
-DodgeBlock website: https://dodgeblock.cf
+DodgeBlock website: https://dodgeblock.othello7.dev/
 ## Features
 - [x] Normal Mode (partial)
 - [ ] All Modes
